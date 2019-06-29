@@ -6,11 +6,13 @@
 
   <ItemGroup>
     <None Remove="Protos\blub.proto" />
+    <None Remove="Protos\chat.proto" />
     <None Remove="Protos\timeInformation.proto" />
   </ItemGroup>
 
   <ItemGroup>
     <Protobuf Include="Protos\blub.proto" GrpcServices="Server" />
+    <Protobuf Include="Protos\chat.proto" GrpcServices="Server" />
     <Protobuf Include="Protos\timeInformation.proto" GrpcServices="Server" />
   </ItemGroup>
 
