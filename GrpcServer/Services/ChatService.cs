@@ -27,19 +27,27 @@ namespace GrpcServer.Services
 
 				BroadCastMessage(message, clientId);
 			}
+
+			allChatClients.TryRemove(clientId, out IServerStreamWriter<ChatReply> finishedClient);
 		}
 
 		private void BroadCastMessage(string message, Guid clientId)
 		{
 			// Discard Task.. "new" Feature https://blogs.msdn.microsoft.com/mazhou/2017/06/27/c-7-series-part-4-discards/
-			_ = Task.Run(() =>
+			// Ignores a nullreference exception if value is null
+			// this happpens when a client disconnects without complete the request
+			// https://docs.microsoft.com/de-de/dotnet/csharp/discards
+			_ = Task.Run(async () =>
+		  {
+			  List<Task> allTasks = new List<Task>();
+			  foreach (var client in allChatClients.Where(x => x.Key != clientId))
 			  {
-				  Parallel.ForEach(allChatClients.Where(x => x.Key != clientId), async (otherclients) =>
-				  {
-					  await otherclients.Value.WriteAsync(new ChatReply() { Message = message });
-				  });
-			  });
-
+				
+				allTasks.Add(client.Value.WriteAsync(new ChatReply() { Message = message }));
+			  }
+			  // nicht waitall!
+			  await Task.WhenAll(allTasks);
+		  });
 
 		}
 	}
