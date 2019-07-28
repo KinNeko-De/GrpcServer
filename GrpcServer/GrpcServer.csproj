@@ -8,12 +8,14 @@
     <None Remove="Protos\blub.proto" />
     <None Remove="Protos\chat.proto" />
     <None Remove="Protos\timeInformation.proto" />
+    <None Remove="Protos\zipextractor.proto" />
   </ItemGroup>
 
   <ItemGroup>
     <Protobuf Include="Protos\blub.proto" GrpcServices="Server" />
     <Protobuf Include="Protos\chat.proto" GrpcServices="Server" />
     <Protobuf Include="Protos\timeInformation.proto" GrpcServices="Server" />
+    <Protobuf Include="Protos\zipextractor.proto" GrpcServices="Server" />
   </ItemGroup>
 
   <ItemGroup>
@@ -21,6 +23,10 @@
     <PackageReference Include="Google.Protobuf" Version="3.8.0" />
 
     <PackageReference Include="Grpc.Tools" Version="1.21.0" PrivateAssets="All" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ZipArchiveExtensions\ZipArchiveExtensions.csproj" />
   </ItemGroup>
 
 </Project>

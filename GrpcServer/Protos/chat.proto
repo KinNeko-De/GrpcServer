@@ -4,9 +4,7 @@ option csharp_namespace = "GrpcServer";
 
 package Chat;
 
-// The greeting service definition.
 service Chat {
-  // Sends a greeting
   rpc Chat (stream ChatRequest) returns (stream ChatReply) {}
   rpc NewUser (NewUserRequest) returns (NewUserReply) {}
   rpc DirectMessage (DirectMessageRequest) returns (DirectMessageReply) {}

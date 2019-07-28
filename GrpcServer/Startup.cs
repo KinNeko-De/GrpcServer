@@ -36,6 +36,7 @@ namespace GrpcServer
 				endpoints.MapGrpcService<BlubberService>();
 				endpoints.MapGrpcService<TimeInformationService>();
 				endpoints.MapGrpcService<ChatService>();
+				endpoints.MapGrpcService<ZipExtractorService>();
 			});
 		}
 	}
