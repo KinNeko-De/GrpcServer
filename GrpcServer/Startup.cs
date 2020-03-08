@@ -37,6 +37,7 @@ namespace GrpcServer
 				endpoints.MapGrpcService<TimeInformationService>();
 				endpoints.MapGrpcService<ChatService>();
 				endpoints.MapGrpcService<ZipExtractorService>();
+				endpoints.MapGrpcService<FileTransferService>();
 			});
 		}
 	}
