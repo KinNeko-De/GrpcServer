@@ -4,7 +4,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using FileTransfer;
 using Grpc.Core;
-using GrpcServer.Protos;
 using System.IO;
 
 namespace GrpcServer.Services
