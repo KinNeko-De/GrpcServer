@@ -10,45 +10,52 @@ namespace GrpcServer.Services
 	public class ChatService : Chat.ChatBase
 	{
 		// low budget singleton
-		static ConcurrentDictionary<Guid, IServerStreamWriter<ChatReply>> allChatClients = new ConcurrentDictionary<Guid, IServerStreamWriter<ChatReply>>();
+		static ConcurrentDictionary<Guid, IServerStreamWriter<ChatMessagesResponse>> allChatClients = new ConcurrentDictionary<Guid, IServerStreamWriter<ChatMessagesResponse>>();
 
-		public override async Task Chat(IAsyncStreamReader<ChatRequest> requestStream, IServerStreamWriter<ChatReply> responseStream, ServerCallContext context)
+		public override async Task SendMessages(IAsyncStreamReader<ChatMessagesRequest> requestStream, IServerStreamWriter<ChatMessagesResponse> responseStream, ServerCallContext context)
 		{
-			var clientId = Guid.NewGuid();
-			allChatClients.GetOrAdd(clientId, responseStream);
-
-			while (await requestStream.MoveNext())
+			await requestStream.MoveNext(context.CancellationToken);
+			var firstRequest = requestStream.Current;
+			if (firstRequest.MessagesCase != ChatMessagesRequest.MessagesOneofCase.NewUser)
 			{
-				var chatRequest = requestStream.Current;
-				string message = $"({DateTime.Now:hh:mm}){chatRequest.ClientName}: {chatRequest.Message}";
-
-				// remember what was said to eventual consistency.. await that the sender see his message
-				await responseStream.WriteAsync(new ChatReply() { Message = message });
-
-				BroadCastMessage(message, clientId);
+				throw new RpcException(new Status(StatusCode.InvalidArgument, "Login first."));
 			}
 
-			allChatClients.TryRemove(clientId, out IServerStreamWriter<ChatReply> finishedClient);
-		}
+			var newUserRequest = firstRequest.NewUser;
+			var clientId = Guid.Parse(newUserRequest.Id);
 
-		private void BroadCastMessage(string message, Guid clientId)
-		{
-			// Discard Task.. "new" Feature https://blogs.msdn.microsoft.com/mazhou/2017/06/27/c-7-series-part-4-discards/
-			// Ignores a nullreference exception if value is null
-			// this happpens when a client disconnects without complete the request
-			// https://docs.microsoft.com/de-de/dotnet/csharp/discards
-			_ = Task.Run(async () =>
-		  {
-			  List<Task> allTasks = new List<Task>();
-			  foreach (var client in allChatClients.Where(x => x.Key != clientId))
-			  {
-				
-				allTasks.Add(client.Value.WriteAsync(new ChatReply() { Message = message }));
-			  }
-			  // nicht waitall!
-			  await Task.WhenAll(allTasks);
-		  });
+			allChatClients.GetOrAdd(clientId, responseStream);
 
+			try
+			{
+				while (await requestStream.MoveNext(context.CancellationToken))
+				{
+					var request = requestStream.Current;
+					if (request.MessagesCase == ChatMessagesRequest.MessagesOneofCase.ChatMessage)
+					{
+						// make this responsive so that you can not only chat with yourself :)
+						var chatRequest = request.ChatMessage;
+						var response = new ChatMessagesResponse()
+						{
+							ChatMessage = new ChatMessageResponse()
+							{
+								Id = chatRequest.Id,
+								Message = chatRequest.Message,
+								UserName = newUserRequest.Name
+							}
+						};
+						await responseStream.WriteAsync(response);
+					}
+				}
+			}
+			catch (OperationCanceledException)
+			{
+				// TODO send user logged out message
+			}
+			finally
+			{
+				allChatClients.TryRemove(clientId, out _);
+			}
 		}
 	}
 }
