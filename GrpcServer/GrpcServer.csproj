@@ -21,10 +21,16 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Grpc.AspNetCore.Server" Version="2.27.0" />
-    <PackageReference Include="Google.Protobuf" Version="3.11.4" />
+    <PackageReference Include="Google.Protobuf" Version="3.14.0" />
+    <PackageReference Include="Grpc.AspNetCore.Server" Version="2.33.1" />
+    <PackageReference Include="Grpc.Tools" Version="2.33.1">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
 
-    <PackageReference Include="Grpc.Tools" Version="2.27.0" PrivateAssets="All" />
+    <PackageReference Include="System.Reactive" Version="5.0.0" />
+
+    <PackageReference Include="System.Reactive.Linq" Version="5.0.0" />
   </ItemGroup>
 
   <ItemGroup>
