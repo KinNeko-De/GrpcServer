@@ -38,7 +38,7 @@ namespace GrpcServer.Services
 		{
 			try
 			{
-				using (FileStream output = File.Open(downloadNameAndPath, FileMode.CreateNew, FileAccess.Write, FileShare.Delete))
+				await using (FileStream output = File.Open(downloadNameAndPath, FileMode.CreateNew, FileAccess.Write, FileShare.Delete))
 				{
 					while (await requestStream.MoveNext(context.CancellationToken))
 					{
