@@ -24,16 +24,17 @@ namespace GrpcServer.Services
 		{
 			await requestStream.MoveNext(context.CancellationToken);
 			var firstRequest = requestStream.Current;
-			if (firstRequest.MessagesCase != ChatMessagesRequest.MessagesOneofCase.NewUser)
+			if (firstRequest.MessagesCase != ChatMessagesRequest.MessagesOneofCase.UserLogin)
 			{
 				throw new RpcException(new Status(StatusCode.InvalidArgument, "Login first."));
 			}
 
 			myResponseStream = responseStream;
 			using var subscription = Pusher.Subscribe(OnNext);
-			var _ = Task.Run(() => SendOutgoingMessage(context.CancellationToken));
+			var sendingTask = Task.Run(() => SendOutgoingMessage(context.CancellationToken));
 
-			var newUserRequest = firstRequest.NewUser;
+			var userLoginRequest = firstRequest.UserLogin;
+			Pusher.OnNext(CreateUserLoginMessage(userLoginRequest));
 
 			try
 			{
@@ -43,7 +44,7 @@ namespace GrpcServer.Services
 					switch (request.MessagesCase)
 					{
 						case ChatMessagesRequest.MessagesOneofCase.ChatMessage:
-							NewOutgoingMessage(request.ChatMessage, newUserRequest);
+							NewOutgoingMessage(CreateChatMessage(request.ChatMessage, userLoginRequest));
 							break;
 						default:
 							// DoNothing
@@ -53,11 +54,24 @@ namespace GrpcServer.Services
 			}
 			catch (OperationCanceledException)
 			{
-				// TODO send user logged out message
+				// It is ok
 			}
 			finally
 			{
+				NewOutgoingMessage(CreateUserLogoutMessage(userLoginRequest));
+
+				await EndSendingMessages(subscription, sendingTask);
 			}
+		}
+
+		private async Task EndSendingMessages(IDisposable subscription, Task sendingTask)
+		{
+			// dispose so that no new messages are added
+			subscription.Dispose();
+
+			// mark adding complete so that sending task finished
+			outgoingMessages.CompleteAdding();
+			await sendingTask;
 		}
 
 		private void OnNext(ChatMessagesResponse obj)
@@ -65,21 +79,52 @@ namespace GrpcServer.Services
 			outgoingMessages.TryAdd(obj);
 		}
 
-		private void NewOutgoingMessage(ChatMessageRequest chatRequest, NewUserRequest newUserRequest)
+		private ChatMessagesResponse CreateChatMessage(ChatMessage chatMessage, UserLogin userLogin)
 		{
 			ChatMessagesResponse response = new ChatMessagesResponse()
 			{
-				ChatMessage = new ChatMessageResponse()
+				SendFromUserId = userLogin.Id,
+				SendFromUserName = userLogin.Name,
+				ChatMessage = new ChatMessage()
 				{
-					Id = chatRequest.Id,
-					Message = chatRequest.Message,
-					UserName = newUserRequest.Name
+					Id = chatMessage.Id,
+					Message = chatMessage.Message
 				}
 			};
+			return response;
+		}
 
-			Pusher.OnNext(response);
+		private ChatMessagesResponse CreateUserLogoutMessage(UserLogin userLogin)
+		{
+			ChatMessagesResponse response = new ChatMessagesResponse()
+			{
+				SendFromUserId = userLogin.Id,
+				UserLogout = new UserLogout()
+				{
+					Id = userLogin.Id,
+					Name = userLogin.Name
+				}
+			};
+			return response;
+		}
 
-			// outgoingMessages.TryAdd(response);
+		private ChatMessagesResponse CreateUserLoginMessage(UserLogin userLogin)
+		{
+			ChatMessagesResponse response = new ChatMessagesResponse()
+			{
+				SendFromUserId = userLogin.Id,
+				UserLogin = new UserLogin()
+				{
+					Id = userLogin.Id,
+					Name = userLogin.Name
+				}
+			};
+			return response;
+		}
+
+		private void NewOutgoingMessage(ChatMessagesResponse chatMessagesResponse)
+		{
+			Pusher.OnNext(chatMessagesResponse);
 		}
 
 		private async Task SendOutgoingMessage(CancellationToken cancellationToken)
