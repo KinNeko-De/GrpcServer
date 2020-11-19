@@ -30,10 +30,11 @@ namespace GrpcServer.Services
 			}
 
 			myResponseStream = responseStream;
-			using var subscription = Pusher.Subscribe(OnNext);
-			var sendingTask = Task.Run(() => SendOutgoingMessage(context.CancellationToken));
-
 			var userLoginRequest = firstRequest.UserLogin;
+
+			using var subscription = Pusher.Subscribe(OnNext);
+			var sendingTask = Task.Run(() => SendOutgoingMessage(userLoginRequest.Id, context.CancellationToken));
+
 			Pusher.OnNext(CreateUserLoginMessage(userLoginRequest));
 
 			try
@@ -127,12 +128,15 @@ namespace GrpcServer.Services
 			Pusher.OnNext(chatMessagesResponse);
 		}
 
-		private async Task SendOutgoingMessage(CancellationToken cancellationToken)
+		private async Task SendOutgoingMessage(string myUserId, CancellationToken cancellationToken)
 		{
 			var outgoing = outgoingMessages.GetConsumingEnumerable(cancellationToken);
 			foreach (var response in outgoing)
 			{
-				await myResponseStream.WriteAsync(response);
+				if(response.SendFromUserId != myUserId)
+				{
+					await myResponseStream.WriteAsync(response);
+				}
 			}
 		}
 	}
