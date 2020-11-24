@@ -15,28 +15,25 @@ namespace GrpcServer.Services
 	public class ChatService : Chat.ChatBase
 	{
 		// low budget singleton
+		// In some tutorials this is called PublishSubject; it should do a broadcast to all current subscriber
 		static readonly Subject<ChatMessagesResponse> Pusher = new Subject<ChatMessagesResponse>();
-
-		private readonly BlockingCollection<ChatMessagesResponse> outgoingMessages = new BlockingCollection<ChatMessagesResponse>();
-		private IServerStreamWriter<ChatMessagesResponse> myResponseStream;
 
 		public override async Task SendMessages(IAsyncStreamReader<ChatMessagesRequest> requestStream, IServerStreamWriter<ChatMessagesResponse> responseStream, ServerCallContext context)
 		{
-			await requestStream.MoveNext(context.CancellationToken);
-			var firstRequest = requestStream.Current;
-			if (firstRequest.MessagesCase != ChatMessagesRequest.MessagesOneofCase.UserLogin)
-			{
-				throw new RpcException(new Status(StatusCode.InvalidArgument, "Login first."));
-			}
+			UserLogin userLoginRequest = await GetUserLogin(requestStream, context);
 
-			myResponseStream = responseStream;
-			var userLoginRequest = firstRequest.UserLogin;
+			var observer = new ChatObserver(responseStream);
+			using var subscription = Pusher.Subscribe(observer);
+			observer.StartSendingOutgoingMessages(userLoginRequest.Id, context.CancellationToken);
 
-			using var subscription = Pusher.Subscribe(OnNext);
-			var sendingTask = Task.Run(() => SendOutgoingMessage(userLoginRequest.Id, context.CancellationToken));
-
+			// do this after subscription to ensure to get all 'i love you' messages
 			Pusher.OnNext(CreateUserLoginMessage(userLoginRequest));
 
+			await Chatting(requestStream, context, userLoginRequest, observer, subscription);
+		}
+
+		private async Task Chatting(IAsyncStreamReader<ChatMessagesRequest> requestStream, ServerCallContext context, UserLogin userLoginRequest, ChatObserver observer, IDisposable subscription)
+		{
 			try
 			{
 				while (await requestStream.MoveNext(context.CancellationToken))
@@ -48,36 +45,47 @@ namespace GrpcServer.Services
 							NewOutgoingMessage(CreateChatMessage(request.ChatMessage, userLoginRequest));
 							break;
 						default:
-							// DoNothing
+							// DoNothing, changing name is not supported yet
 							break;
 					}
 				}
 			}
 			catch (OperationCanceledException)
 			{
-				// It is ok
+				// It is ok.. i call it on client side even it it not needed
 			}
 			finally
 			{
+				EndReceivingMessages(subscription);
+
+				// do this after because you should not see all the 'i hate him but i am too shy to tell him' messages
 				NewOutgoingMessage(CreateUserLogoutMessage(userLoginRequest));
 
-				await EndSendingMessages(subscription, sendingTask);
+				await EndSendingMessages(observer);
 			}
 		}
 
-		private async Task EndSendingMessages(IDisposable subscription, Task sendingTask)
+		private static async Task<UserLogin> GetUserLogin(IAsyncStreamReader<ChatMessagesRequest> requestStream, ServerCallContext context)
+		{
+			await requestStream.MoveNext(context.CancellationToken);
+			var firstRequest = requestStream.Current;
+			if (firstRequest.MessagesCase != ChatMessagesRequest.MessagesOneofCase.UserLogin)
+			{
+				throw new RpcException(new Status(StatusCode.InvalidArgument, "Login first."));
+			}
+			var userLoginRequest = firstRequest.UserLogin;
+			return userLoginRequest;
+		}
+
+		private void EndReceivingMessages(IDisposable subscription)
 		{
 			// dispose so that no new messages are added
 			subscription.Dispose();
-
-			// mark adding complete so that sending task finished
-			outgoingMessages.CompleteAdding();
-			await sendingTask;
 		}
 
-		private void OnNext(ChatMessagesResponse obj)
+		private async Task EndSendingMessages(ChatObserver observer)
 		{
-			outgoingMessages.TryAdd(obj);
+			await observer.StopSendingOutgoingMessages();
 		}
 
 		private ChatMessagesResponse CreateChatMessage(ChatMessage chatMessage, UserLogin userLogin)
@@ -128,15 +136,53 @@ namespace GrpcServer.Services
 			Pusher.OnNext(chatMessagesResponse);
 		}
 
-		private async Task SendOutgoingMessage(string myUserId, CancellationToken cancellationToken)
+		private class ChatObserver : IObserver<ChatMessagesResponse>
 		{
-			var outgoing = outgoingMessages.GetConsumingEnumerable(cancellationToken);
-			foreach (var response in outgoing)
+			private readonly BlockingCollection<ChatMessagesResponse> outgoingMessages = new BlockingCollection<ChatMessagesResponse>();
+			private IServerStreamWriter<ChatMessagesResponse> myResponseStream;
+			Task sendingTask;
+
+			public ChatObserver(IServerStreamWriter<ChatMessagesResponse> responseStream)
 			{
-				if(response.SendFromUserId != myUserId)
+				this.myResponseStream = responseStream;
+			}
+
+			public void StartSendingOutgoingMessages(string userId, CancellationToken cancellationToken) 
+			{
+				sendingTask = Task.Run(() => SendOutgoingMessage(userId, cancellationToken), cancellationToken);
+			}
+
+			private async Task SendOutgoingMessage(string myUserId, CancellationToken cancellationToken)
+			{
+				var outgoing = outgoingMessages.GetConsumingEnumerable(cancellationToken);
+				foreach (var response in outgoing)
 				{
-					await myResponseStream.WriteAsync(response);
+					if (response.SendFromUserId != myUserId)
+					{
+						await myResponseStream.WriteAsync(response);
+					}
 				}
+			}
+
+			public async Task StopSendingOutgoingMessages()
+			{
+				outgoingMessages.CompleteAdding();
+				await sendingTask;
+			}
+
+			public void OnCompleted()
+			{
+				// Never happen unless server gracefully shutdown which is not implemented yet.
+			}
+
+			public void OnError(Exception error)
+			{
+				// Write Error to console. But logging is not implemented yet
+			}
+
+			public void OnNext(ChatMessagesResponse value)
+			{
+				outgoingMessages.Add(value);
 			}
 		}
 	}
