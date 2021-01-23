@@ -1,3 +1,5 @@
+# Has to updated to .net 5 :)
+
 FROM mcr.microsoft.com/dotnet/core/runtime:3.0.0-preview6-disco AS base
 
 # Install ASP.NET Core

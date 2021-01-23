@@ -1,8 +1,4 @@
 using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.Hosting;
@@ -23,7 +19,7 @@ namespace GrpcServer
 				.ConfigureWebHostDefaults(webBuilder =>
 				{
 					webBuilder.UseStartup<Startup>()
-					.UseUrls()
+					.UseUrls() // UseKestrel is used instead, you can not override the application url
 					.UseKestrel(options =>
 					{				
 						options.ListenAnyIP(5000, listenOptions => { listenOptions.Protocols = HttpProtocols.Http1AndHttp2; });
@@ -32,6 +28,5 @@ namespace GrpcServer
 					});
 				});
 		}
-			
 	}
 }

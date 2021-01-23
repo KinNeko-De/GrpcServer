@@ -20,6 +20,8 @@ namespace GrpcServer.Services
 
 		public override async Task SendMessages(IAsyncStreamReader<ChatMessagesRequest> requestStream, IServerStreamWriter<ChatMessagesResponse> responseStream, ServerCallContext context)
 		{
+			// throw new RpcException(new Status(StatusCode.Internal, "i test it")); // is displayed as info
+			// throw new Exception("another test"); // is displayed as fail and mapped to status code unknown
 			UserLogin userLoginRequest = await GetUserLogin(requestStream, context);
 
 			var observer = new ChatObserver(responseStream);
