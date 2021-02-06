@@ -13,7 +13,7 @@ using Microsoft.Extensions.Logging;
 
 namespace GrpcServer.Services
 {
-	public class ChatService : Chat.ChatBase
+	public class ChatService : GrpcServer.ChatService.ChatServiceBase
 	{
 		private readonly ILogger<ChatService> logger;
 

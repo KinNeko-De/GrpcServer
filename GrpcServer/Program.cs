@@ -12,10 +12,11 @@ namespace GrpcServer
 	{
 		public static int Main(string[] args)
 		{
-			SetSerilogDefaultLogger();
+			
 
 			try
 			{
+				SetSerilogDefaultLogger();
 				Log.Information("Starting application: 'grpc_server'");
 				CreateHostBuilder(args).Build().Run();
 				return 0;
@@ -27,6 +28,8 @@ namespace GrpcServer
 			}
 			finally
 			{
+				SetSerilogDefaultLogger();
+				Log.Information("Stopping application: 'grpc_server'");
 				Log.CloseAndFlush();
 			}
 		}

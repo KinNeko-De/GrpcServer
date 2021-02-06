@@ -6,7 +6,7 @@ package TimeInformation;
 
 import "google/protobuf/timestamp.proto";
 
-service TimeInformation {
+service TimeInformationService {
   rpc TimePing (TimePingRequest) returns (stream TimePingReply) {}
   rpc TimePingWithGoodBye (stream TimePingRequest) returns (stream TimePingReply) {}
 }

@@ -8,7 +8,7 @@ using Grpc.Core;
 
 namespace GrpcServer.Services
 {
-	public class TimeInformationService : TimeInformation.TimeInformationBase
+	public class TimeInformationService : GrpcServer.TimeInformationService.TimeInformationServiceBase
 	{
 		public override async Task TimePing(TimePingRequest request, IServerStreamWriter<TimePingReply> responseStream, ServerCallContext context)
 		{
