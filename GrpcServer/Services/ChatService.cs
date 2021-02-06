@@ -9,14 +9,22 @@ using System.Reactive.Subjects;
 using System.Threading;
 using System.Threading.Tasks;
 using Grpc.Core;
+using Microsoft.Extensions.Logging;
 
 namespace GrpcServer.Services
 {
 	public class ChatService : Chat.ChatBase
 	{
+		private readonly ILogger<ChatService> logger;
+
 		// low budget singleton
 		// In some tutorials this is called PublishSubject; it should do a broadcast to all current subscriber
 		static readonly Subject<ChatMessagesResponse> Pusher = new Subject<ChatMessagesResponse>();
+
+		public ChatService(ILogger<ChatService> logger)
+		{
+			this.logger = logger;
+		}
 
 		public override async Task SendMessages(IAsyncStreamReader<ChatMessagesRequest> requestStream, IServerStreamWriter<ChatMessagesResponse> responseStream, ServerCallContext context)
 		{
@@ -24,7 +32,7 @@ namespace GrpcServer.Services
 			// throw new Exception("another test"); // is displayed as fail and mapped to status code unknown
 			UserLogin userLoginRequest = await GetUserLogin(requestStream, context);
 
-			var observer = new ChatObserver(responseStream);
+			var observer = new ChatObserver(responseStream, logger);
 			using var subscription = Pusher.Subscribe(observer);
 			observer.StartSendingOutgoingMessages(userLoginRequest.Id, context.CancellationToken);
 
@@ -142,11 +150,13 @@ namespace GrpcServer.Services
 		{
 			private readonly BlockingCollection<ChatMessagesResponse> outgoingMessages = new BlockingCollection<ChatMessagesResponse>();
 			private IServerStreamWriter<ChatMessagesResponse> myResponseStream;
-			Task sendingTask;
+			private readonly ILogger logger;
+			Task? sendingTask;
 
-			public ChatObserver(IServerStreamWriter<ChatMessagesResponse> responseStream)
+			public ChatObserver(IServerStreamWriter<ChatMessagesResponse> responseStream, ILogger logger)
 			{
 				this.myResponseStream = responseStream;
+				this.logger = logger;
 			}
 
 			public void StartSendingOutgoingMessages(string userId, CancellationToken cancellationToken) 
@@ -169,7 +179,10 @@ namespace GrpcServer.Services
 			public async Task StopSendingOutgoingMessages()
 			{
 				outgoingMessages.CompleteAdding();
-				await sendingTask;
+				if (sendingTask != null)
+				{
+					await sendingTask;
+				}
 			}
 
 			public void OnCompleted()
@@ -177,9 +190,9 @@ namespace GrpcServer.Services
 				// Never happen unless server gracefully shutdown which is not implemented yet.
 			}
 
-			public void OnError(Exception error)
+			public void OnError(Exception exception)
 			{
-				// Write Error to console. But logging is not implemented yet
+				logger.LogError(exception, "Exception occurred.");
 			}
 
 			public void OnNext(ChatMessagesResponse value)

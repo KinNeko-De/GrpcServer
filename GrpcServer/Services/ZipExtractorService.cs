@@ -31,7 +31,11 @@ namespace GrpcServer.Services
 				await Task.Run(() => Parallel.ForEach(zipArchiveEntries, zipArchiveEntry =>
 				{
 					var targetFile = Path.Combine(request.TargetPath, zipArchiveEntry.FullName);
-					Directory.CreateDirectory(Path.GetDirectoryName(targetFile));
+					string? targetDirectory = Path.GetDirectoryName(targetFile);
+					if (targetDirectory != null)
+					{
+						Directory.CreateDirectory(targetDirectory);
+					}
 					zipArchiveEntry.ExtractToFile(targetFile, true);
 					
 					var result = Interlocked.Increment(ref itemFinished);
