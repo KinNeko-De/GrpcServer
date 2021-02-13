@@ -30,9 +30,6 @@ namespace GrpcServer.Services
 
 		public override async Task SendMessages(IAsyncStreamReader<ChatMessagesRequest> requestStream, IServerStreamWriter<ChatMessagesResponse> responseStream, ServerCallContext context)
 		{
-			throw new RpcException(new Status(StatusCode.Internal, "Test"));
-			var innerException = new Exception("I am inner");
-			throw new Exception("Test", innerException);
 			UserLogin userLoginRequest = await GetUserLogin(requestStream, context);
 
 			var observer = new ChatObserver(responseStream, logger);
