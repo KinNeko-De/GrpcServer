@@ -1,0 +1,17 @@
+﻿syntax = "proto3";
+
+option csharp_namespace = "GrpcServer";
+
+package ErrorExample;
+
+// The greeting service definition.
+service ErrorService {
+  // Returns a error that is enriched with every possible methods provided by the grpc standard
+  rpc GiveMeADetailedError (GiveMeADetailedErrorRequest) returns (GiveMeADetailedErrorResponse) {}
+}
+
+message GiveMeADetailedErrorRequest {
+}
+
+message GiveMeADetailedErrorResponse {
+}
