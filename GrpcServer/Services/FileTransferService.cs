@@ -1,14 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using FileTransfer;
-using Grpc.Core;
 using System.IO;
+using System.Threading.Tasks;
+using Grpc.Core;
+using Grpcservices;
 
 namespace GrpcServer.Services
 {
-	public class FileTransferService : FileTransfer.Files.FilesBase 
+	public class FileTransferService : Grpcservices.FileService.FileServiceBase
 	{
 		public override async Task<StartUploadResponse> StartUpload(IAsyncStreamReader<StartUploadRequest> requestStream, ServerCallContext context)
 		{
@@ -63,7 +61,7 @@ namespace GrpcServer.Services
 				var fileNameAndPath = Path.Combine(downloadFolder, fileName);
 				File.Move(downloadNameAndPath, fileNameAndPath);
 			}
-			catch(Exception exception)
+			catch (Exception exception)
 			{
 				throw new RpcException(new Status(StatusCode.AlreadyExists, $"The file '{fileName}' was already uploaded"), exception.ToString());
 			}
@@ -75,7 +73,7 @@ namespace GrpcServer.Services
 
 			if (requesttype == StartUploadRequest.UploadRequestOneofCase.FileMetadata)
 			{
-				throw new RpcException(new Status(StatusCode.InvalidArgument, "File metadata is was alread sent. Only payload is accepted"));
+				throw new RpcException(new Status(StatusCode.InvalidArgument, "File metadata is was already sent. Only payload is accepted"));
 			}
 		}
 

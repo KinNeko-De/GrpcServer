@@ -3,10 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Grpc.Core;
+using Grpcservices;
 
 namespace GrpcServer.Services
 {
-	public class BlubberService : Blubber.BlubberBase
+	public class BlubberService : Grpcservices.BlubberService.BlubberServiceBase
 	{
 		public override Task<GiveMeABlubReply> GiveMeABlub(GiveMeABlubRequest request, ServerCallContext context)
 		{

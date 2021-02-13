@@ -1,11 +1,9 @@
 ﻿syntax = "proto3";
 
-option csharp_namespace = "GrpcServer";
-
-package blub;
+package grpcservices;
 
 // The greeting service definition.
-service Blubber {
+service BlubberService {
   // Sends a greeting
   rpc GiveMeABlub (GiveMeABlubRequest) returns (GiveMeABlubReply) {}
 }

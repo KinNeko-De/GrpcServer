@@ -8,12 +8,14 @@ using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Threading;
 using System.Threading.Tasks;
+using Google.Protobuf;
 using Grpc.Core;
+using Grpcservices;
 using Microsoft.Extensions.Logging;
 
 namespace GrpcServer.Services
 {
-	public class ChatService : GrpcServer.ChatService.ChatServiceBase
+	public class ChatService : Grpcservices.ChatService.ChatServiceBase
 	{
 		private readonly ILogger<ChatService> logger;
 
@@ -28,15 +30,16 @@ namespace GrpcServer.Services
 
 		public override async Task SendMessages(IAsyncStreamReader<ChatMessagesRequest> requestStream, IServerStreamWriter<ChatMessagesResponse> responseStream, ServerCallContext context)
 		{
-			// throw new RpcException(new Status(StatusCode.Internal, "i test it")); // is displayed as info
-			// throw new Exception("another test"); // is displayed as fail and mapped to status code unknown
+			throw new RpcException(new Status(StatusCode.Internal, "Test"));
+			var innerException = new Exception("I am inner");
+			throw new Exception("Test", innerException);
 			UserLogin userLoginRequest = await GetUserLogin(requestStream, context);
 
 			var observer = new ChatObserver(responseStream, logger);
 			using var subscription = Pusher.Subscribe(observer);
 			observer.StartSendingOutgoingMessages(userLoginRequest.Id, context.CancellationToken);
 
-			// do this after subscription to ensure to get all 'i love you' messages
+			// do this after subscription to ensure to get all 'i love you' messages ;)
 			Pusher.OnNext(CreateUserLoginMessage(userLoginRequest));
 
 			await Chatting(requestStream, context, userLoginRequest, observer, subscription);

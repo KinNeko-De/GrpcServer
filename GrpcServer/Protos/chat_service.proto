@@ -1,8 +1,6 @@
 ﻿syntax = "proto3";
 
-option csharp_namespace = "GrpcServer";
-
-package Chat;
+package grpcservices;
 
 service ChatService {
   rpc SendMessages (stream ChatMessagesRequest) returns (stream ChatMessagesResponse) {}

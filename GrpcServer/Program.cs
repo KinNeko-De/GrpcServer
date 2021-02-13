@@ -74,6 +74,7 @@ namespace GrpcServer
 						.UseSerilog((hostingContext, loggerConfiguration) =>
 						{
 							// format: "/GrpcPackageName.GrpcServiceName"
+							// TODO Replace with diagnostic services
 							string[] excludedRequestPaths = { "/TimeInformation.TimeInformation" };
 
 							loggerConfiguration.ReadFrom.Configuration(hostingContext.Configuration)

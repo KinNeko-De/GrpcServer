@@ -6,13 +6,14 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Grpc.Core;
+using Grpcservices;
 using ZipArchivExtensions;
 
 namespace GrpcServer.Services
 {
-	public class ZipExtractorService : ZipExtractor.ZipExtractorBase
+	public class ZipExtractorService : Grpcservices.ZipExtractorService.ZipExtractorServiceBase
 	{
-		public async override Task Extract(IAsyncStreamReader<ExtractFileRequest> requestStream, IServerStreamWriter<ExtractFileReply> responseStream, ServerCallContext context)
+		public async override Task Extract(IAsyncStreamReader<ExtractFileRequest> requestStream, IServerStreamWriter<ExtractFileResponse> responseStream, ServerCallContext context)
 		{
 			while (await requestStream.MoveNext())
 			{
@@ -44,7 +45,7 @@ namespace GrpcServer.Services
 
 				await responseTask;
 
-				await responseStream.WriteAsync(new ExtractFileReply
+				await responseStream.WriteAsync(new ExtractFileResponse
 				{
 					Id = request.Id,
 					Finished = true,
@@ -62,7 +63,7 @@ namespace GrpcServer.Services
 			return progress;
 		}
 		
-		private async Task ReportProgress(ExtractFileRequest request, IServerStreamWriter<ExtractFileReply> responseStream, ConcurrentStack<int> progressStack, int items)
+		private async Task ReportProgress(ExtractFileRequest request, IServerStreamWriter<ExtractFileResponse> responseStream, ConcurrentStack<int> progressStack, int items)
 		{
 			int lastReport = 0;
 			int lastReported = -1;
@@ -72,7 +73,7 @@ namespace GrpcServer.Services
 				
 				if(lastReport != lastReported)
 				{
-					await responseStream.WriteAsync(new ExtractFileReply
+					await responseStream.WriteAsync(new ExtractFileResponse
 					{
 						Id = request.Id,
 						Finished = false,
