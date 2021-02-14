@@ -38,7 +38,7 @@ namespace GrpcServer.Domain.Errors
 			public string Reason { get; }
 			public string User { get; }
 
-			public YouCanNotComeInException(string reason, string user) : base(reason)
+			public YouCanNotComeInException(string reason, string user) : base("You can not come in")
 			{
 				User = user;
 				Reason = reason;

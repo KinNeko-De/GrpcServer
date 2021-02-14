@@ -39,9 +39,6 @@ namespace GrpcServer.Services
 				var errorMessageExtension = grpcOptions.EnabledDetailedErrors ? $" {exception}" : string.Empty;
 				var errorId = Guid.NewGuid().ToString("N", CultureInfo.InvariantCulture);
 
-				var errorMessage = $"Error when executing service method {{Method}}. ErrorId is '{{ErrorId}}'.{errorMessageExtension}";
-				logger.LogError(exception, errorMessage, context.Method, errorId);
-
 				RpcException rpcExceptionToThrow;
 				switch (exception)
 				{
@@ -49,7 +46,7 @@ namespace GrpcServer.Services
 						rpcExceptionToThrow = 
 							grpcOptions.EnabledDetailedErrors 
 								? new RpcException(
-									new Status(rpcException.StatusCode, $"{rpcException.Status.Detail}{errorMessageExtension}", rpcException.Status.DebugException),
+									new Status(rpcException.StatusCode, $"{rpcException.Status.Detail}ErrorId is '{errorId}'.{errorMessageExtension}", rpcException.Status.DebugException),
 									rpcException.Trailers,
 									$"{rpcException}{errorMessageExtension}") 
 								: rpcException;
@@ -61,6 +58,9 @@ namespace GrpcServer.Services
 						break;
 				}
 
+				var rpcErrorMessage = $"Rpc error status code '{{RpcStatusCode}}' raised. ErrorId is '{{ErrorId}}'.{errorMessageExtension}";
+				logger.LogError(rpcExceptionToThrow, rpcErrorMessage, rpcExceptionToThrow.StatusCode, errorId);
+
 				throw rpcExceptionToThrow;
 			}
 		}
@@ -68,7 +68,7 @@ namespace GrpcServer.Services
 		public Metadata CreateTrailer<T>(T error) where T : IMessage
 		{
 			var metaData = new Metadata();
-			var metaDataKey = nameof(T).ToLower();
+			var metaDataKey = $"{typeof(T).Name.ToLower()}-bin";
 			try
 			{
 				metaData.Add(metaDataKey, error.ToByteArray());
