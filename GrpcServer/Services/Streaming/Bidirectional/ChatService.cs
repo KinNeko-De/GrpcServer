@@ -10,12 +10,12 @@ using System.Threading;
 using System.Threading.Tasks;
 using Google.Protobuf;
 using Grpc.Core;
-using Grpcservices;
 using Microsoft.Extensions.Logging;
+using Streaming.Bidirectional;
 
 namespace GrpcServer.Services
 {
-	public class ChatService : Grpcservices.ChatService.ChatServiceBase
+	public class ChatService : Streaming.Bidirectional.ChatService.ChatServiceBase
 	{
 		private readonly ILogger<ChatService> logger;
 

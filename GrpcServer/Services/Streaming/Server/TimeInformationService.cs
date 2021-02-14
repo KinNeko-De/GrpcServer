@@ -3,11 +3,11 @@ using System.Threading;
 using System.Threading.Tasks;
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
-using Grpcservices;
+using Streaming.Server;
 
 namespace GrpcServer.Services
 {
-	public class TimeInformationService : Grpcservices.TimeInformationService.TimeInformationServiceBase
+	public class TimeInformationService : Streaming.Server.TimeInformationService.TimeInformationServiceBase
 	{
 		public override async Task TimePing(TimePingRequest request, IServerStreamWriter<TimePingResponse> responseStream, ServerCallContext context)
 		{

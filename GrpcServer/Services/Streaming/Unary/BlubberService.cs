@@ -2,12 +2,13 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 using Grpc.Core;
-using Grpcservices;
+using Streaming.Unary;
 
 namespace GrpcServer.Services
 {
-	public class BlubberService : Grpcservices.BlubberService.BlubberServiceBase
+	public class BlubberService : Streaming.Unary.BlubberService.BlubberServiceBase
 	{
 		public override Task<GiveMeABlubReply> GiveMeABlub(GiveMeABlubRequest request, ServerCallContext context)
 		{

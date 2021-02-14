@@ -38,7 +38,7 @@ namespace GrpcServer
 				endpoints.MapGrpcService<Services.BlubberService>();
 				endpoints.MapGrpcService<Services.ChatService>();
 				endpoints.MapGrpcService<Services.ErrorService>(); 
-				endpoints.MapGrpcService<Services.FileTransferService>();
+				endpoints.MapGrpcService<Services.TransferService>();
 				endpoints.MapGrpcService<Services.TimeInformationService>();
 				endpoints.MapGrpcService<Services.ZipExtractorService>();
 				

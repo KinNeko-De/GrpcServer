@@ -6,10 +6,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="Protos\blubber_service.proto" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="Google.Protobuf" Version="3.14.0" />
     <PackageReference Include="Grpc.AspNetCore.Server" Version="2.33.1" />
     <PackageReference Include="Grpc.Tools" Version="2.33.1">
@@ -26,12 +22,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Protobuf Include="Protos\blubber_service.proto" GrpcServices="Server" />
-    <Protobuf Include="Protos\chat_service.proto" GrpcServices="Server" />
-    <Protobuf Include="Protos\error_service.proto" GrpcServices="Server" />
-    <Protobuf Include="Protos\filetransfer_service.proto" GrpcServices="Server" />
-    <Protobuf Include="Protos\timeinformation_service.proto" GrpcServices="Server" />
-    <Protobuf Include="Protos\zipextractor_service.proto" GrpcServices="Server" />
+    <Protobuf Include="Protos\errors\error_service.proto" GrpcServices="Server" />
+    <Protobuf Include="Protos\files\filetransfer_service.proto" GrpcServices="Server" />
+    <Protobuf Include="Protos\streaming\bidirectional\chat_service.proto" GrpcServices="Server" />
+    <Protobuf Include="Protos\streaming\client\zipextractor_service.proto" GrpcServices="Server" />
+    <Protobuf Include="Protos\streaming\server\timeinformation_service.proto" GrpcServices="Server" />
+    <Protobuf Include="Protos\streaming\unary\blubber_service.proto" GrpcServices="Server" />
   </ItemGroup>
 
 </Project>

@@ -6,12 +6,12 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Grpc.Core;
-using Grpcservices;
+using Streaming.Client;
 using ZipArchivExtensions;
 
 namespace GrpcServer.Services
 {
-	public class ZipExtractorService : Grpcservices.ZipExtractorService.ZipExtractorServiceBase
+	public class ZipExtractorService : Streaming.Client.ZipExtractorService.ZipExtractorServiceBase
 	{
 		public async override Task Extract(IAsyncStreamReader<ExtractFileRequest> requestStream, IServerStreamWriter<ExtractFileResponse> responseStream, ServerCallContext context)
 		{

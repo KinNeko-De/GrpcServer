@@ -1,12 +1,12 @@
 ﻿using System;
 using System.IO;
 using System.Threading.Tasks;
+using Files;
 using Grpc.Core;
-using Grpcservices;
 
 namespace GrpcServer.Services
 {
-	public class FileTransferService : Grpcservices.FileService.FileServiceBase
+	public class TransferService : Files.TransferService.TransferServiceBase
 	{
 		public override async Task<StartUploadResponse> StartUpload(IAsyncStreamReader<StartUploadRequest> requestStream, ServerCallContext context)
 		{
