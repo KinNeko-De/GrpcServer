@@ -1,35 +1,38 @@
 using System;
 using System.Reflection;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 using Serilog.Events;
+// ReSharper disable once RedundantUsingDirective
+using Serilog.Formatting.Compact;
+// ReSharper disable once RedundantUsingDirective
+using Serilog.Sinks.SystemConsole.Themes;
 
 namespace GrpcServer
 {
 	public class Program
 	{
-		public static int Main(string[] args)
+		public static async Task<int> Main(string[] args)
 		{
-			
 
+			SetSerilogDefaultLogger();
 			try
 			{
-				SetSerilogDefaultLogger();
-				Log.Information("Starting application: 'grpc_server'");
-				CreateHostBuilder(args).Build().Run();
+				Log.Information($"Starting application: '{AppConstants.Application}'.");
+				await CreateHostBuilder(args).Build().RunAsync();
 				return 0;
 			}
 			catch (Exception ex)
 			{
-				Log.Fatal(ex, "application 'grpc_server' terminated unexpectedly");
+				Log.Fatal(ex, $"Application '{AppConstants.Application}' terminated unexpectedly.");
 				return 1;
 			}
 			finally
 			{
-				SetSerilogDefaultLogger();
-				Log.Information("Stopping application: 'grpc_server'");
+				Log.Information($"Stopping application: '{AppConstants.Application}'");
 				Log.CloseAndFlush();
 			}
 		}
@@ -43,7 +46,16 @@ namespace GrpcServer
 				.MinimumLevel.Debug()
 				.MinimumLevel.Override("Microsoft", LogEventLevel.Information)
 				.Enrich.FromLogContext()
-				.WriteTo.Console()
+				.Enrich.WithProperty("Application", AppConstants.Application)
+				.Enrich.WithProperty("AssemblyVersion", Assembly.GetExecutingAssembly().GetName().Version)
+#if DEBUG
+				.WriteTo.Console(
+					theme: AnsiConsoleTheme.Code,
+					outputTemplate: "[{Timestamp:o}] [{Level:u3}] [{Application}] [{Message}] [{Exception}] [{Properties:j}] {NewLine}"
+				)
+#else
+				.WriteTo.Console(new RenderedCompactJsonFormatter())
+#endif
 				.CreateLogger();
 		}
 
