@@ -51,6 +51,7 @@ namespace GrpcServer.Services
 			catch (Exception)
 			{
 				File.Delete(downloadNameAndPath);
+				throw;
 			}
 		}
 
